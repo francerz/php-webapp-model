@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a648f8ee289b101679849f4e30190c3e",
+    "content-hash": "79e972814b2088d3ec48c506f2a8146f",
     "packages": [],
     "packages-dev": [
         {
@@ -76,6 +76,128 @@
                 }
             ],
             "time": "2022-03-03T08:28:38+00:00"
+        },
+        {
+            "name": "francerz/enum",
+            "version": "v0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/francerz/php-enum.git",
+                "reference": "02ccd3dc0b2aebd94db0e297430c8a71d5acba8b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/francerz/php-enum/zipball/02ccd3dc0b2aebd94db0e297430c8a71d5acba8b",
+                "reference": "02ccd3dc0b2aebd94db0e297430c8a71d5acba8b",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Francerz\\Enum\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Francerz",
+                    "email": "francerzam@hotmail.com"
+                }
+            ],
+            "description": "PHP Enumeration tool",
+            "support": {
+                "issues": "https://github.com/francerz/php-enum/issues",
+                "source": "https://github.com/francerz/php-enum/tree/v0.1.1"
+            },
+            "time": "2021-10-18T14:08:19+00:00"
+        },
+        {
+            "name": "francerz/php-power-data",
+            "version": "v0.1.36",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/francerz/php-power-data.git",
+                "reference": "86287a39409f30cb312a77b1fc233d1366a23eea"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/francerz/php-power-data/zipball/86287a39409f30cb312a77b1fc233d1366a23eea",
+                "reference": "86287a39409f30cb312a77b1fc233d1366a23eea",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Francerz\\PowerData\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Francisco CZ"
+                }
+            ],
+            "description": "PHP data structures for complex data handling",
+            "support": {
+                "issues": "https://github.com/francerz/php-power-data/issues",
+                "source": "https://github.com/francerz/php-power-data/tree/v0.1.36"
+            },
+            "time": "2023-11-29T19:12:39+00:00"
+        },
+        {
+            "name": "francerz/sql-builder",
+            "version": "v0.5.16",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/francerz/php-sql-builder.git",
+                "reference": "ffaba39c29b7c6f4ca42a909e4e0fbae73dfc414"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/francerz/php-sql-builder/zipball/ffaba39c29b7c6f4ca42a909e4e0fbae73dfc414",
+                "reference": "ffaba39c29b7c6f4ca42a909e4e0fbae73dfc414",
+                "shasum": ""
+            },
+            "require": {
+                "francerz/enum": "^0.1.1",
+                "francerz/php-power-data": "^0.1",
+                "psr/http-message": "^1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8.5"
+            },
+            "suggest": {
+                "francerz/mysql-builder": "MySQL compatible driver.",
+                "francerz/sqlsrv-builder": "Microsoft SQL Server compatible driver."
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Francerz\\SqlBuilder\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Francerz",
+                    "role": "Developer"
+                }
+            ],
+            "description": "SQL Builder",
+            "support": {
+                "issues": "https://github.com/francerz/php-sql-builder/issues",
+                "source": "https://github.com/francerz/php-sql-builder/tree/v0.5.16"
+            },
+            "time": "2023-09-19T15:35:38+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -722,6 +844,59 @@
                 }
             ],
             "time": "2022-09-25T03:44:45+00:00"
+        },
+        {
+            "name": "psr/http-message",
+            "version": "1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/http-message.git",
+                "reference": "cb6ce4845ce34a8ad9e68117c10ee90a29919eba"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/http-message/zipball/cb6ce4845ce34a8ad9e68117c10ee90a29919eba",
+                "reference": "cb6ce4845ce34a8ad9e68117c10ee90a29919eba",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2 || ^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Http\\Message\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for HTTP messages",
+            "homepage": "https://github.com/php-fig/http-message",
+            "keywords": [
+                "http",
+                "http-message",
+                "psr",
+                "psr-7",
+                "request",
+                "response"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/http-message/tree/1.1"
+            },
+            "time": "2023-04-04T09:50:52+00:00"
         },
         {
             "name": "sebastian/cli-parser",
