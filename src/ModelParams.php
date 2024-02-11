@@ -40,6 +40,7 @@ class ModelParams implements ArrayAccess, Countable, Iterator
     /**
      * @param mixed $offset The offset to retrieve.
      * @return mixed Can return all value types.
+     * @throws ParamUncheckedException when
      */
     public function offsetGet($offset)
     {
