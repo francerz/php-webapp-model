@@ -2,13 +2,18 @@
 
 namespace Francerz\WebappModelUtils;
 
+use Francerz\SqlBuilder\Components\Table;
 use Francerz\SqlBuilder\DatabaseManager;
 use Francerz\SqlBuilder\Query;
+use Francerz\SqlBuilder\Results\InsertResult;
+use Francerz\SqlBuilder\Results\UpdateResult;
+use Francerz\SqlBuilder\Results\UpsertResult;
 use Francerz\SqlBuilder\SelectQuery;
+use InvalidArgumentException;
 
 abstract class AbstractModel
 {
-    #region Data Structure static methods
+    #region Model structure static methods
     /**
      * Returns a database connection parameter object, alias or uri connection string.
      *
@@ -22,6 +27,16 @@ abstract class AbstractModel
      * @return string
      */
     abstract public static function getTableName(): string;
+
+    /**
+     * Returns an sring with a table alias or `null` otherwise.
+     * 
+     * @return string|null
+     */
+    public static function getTableAlias(): ?string
+    {
+        return null;
+    }
 
     /**
      * Returns an array of primary key column names.
@@ -39,7 +54,7 @@ abstract class AbstractModel
      * 
      * @return SelectQuery
      */
-    abstract protected static function buildSelectQuery(ModelParams $params): SelectQuery;
+    abstract protected static function buildSelectQuery(SelectQuery $query, ModelParams $params): SelectQuery;
     #endregion
  
     #region Model operations static methods
@@ -48,13 +63,14 @@ abstract class AbstractModel
      *
      * This method checks $params utilization to ensure proper query building.
      *  
-     * @param array $params An associative array with select query building parameters.
+     * @param array $params
+     * An associative array with select query building parameters.
      * This function also includes some default building parameters:
-     *  - @orderBy: Applies ORDER BY clause to select query.
-     *  - @limit: Restricts number of items returned by SelectQuery.
-     *  - @offset: Available only with @limit parameter, skips rows a the beginning of result set.
-     *  - @page: Retreives a chunk of records from result set.
-     *  - @pageSize: Sets the size of records chunk.
+     *  - **@orderBy**: Applies `ORDER BY` clause to select query.
+     *  - **@limit**: Restricts number of items returned by SelectQuery.
+     *  - **@offset**: Available only with `@limit` parameter, skips rows a the beginning of result set.
+     *  - **@page**: Retreives a chunk of records from result set.
+     *  - **@pageSize**: Sets the size of records chunk.
      * 
      * @return SelectQuery
      *
@@ -65,10 +81,11 @@ abstract class AbstractModel
         // Wraps $params parameter to check select query building consistency.
         $params = new ModelParams($params);
 
-        $query = Query::selectFrom(static::getTableName());
+        $tableRef = new Table(static::getTableName(), static::getTableAlias());
+        $query = Query::selectFrom($tableRef);
 
         // Builds select query from given params.
-        $query = static::buildSelectQuery($params);
+        $query = static::buildSelectQuery($query, $params);
 
         // Applies @orderBy parameter to SelectQuery.
         if (isset($params['@orderBy'])) {
@@ -156,7 +173,7 @@ abstract class AbstractModel
      */
     public static final function insert($data, array $columns)
     {
-        if (!$data instanceof static::class) {
+        if (!$data instanceof static) {
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
         $db = DatabaseManager::connect(static::getDatabase());
@@ -183,7 +200,7 @@ abstract class AbstractModel
     public static final function insertMany(iterable $data, array $columns)
     {
         foreach ($data as $k => $v) {
-            if (!$v instanceof static::class) {
+            if (!$v instanceof static) {
                 throw new InvalidArgumentException(
                     sprintf('Invalid item type in $data[%d], must be of type %s.', $k, static::class)
                 );
@@ -216,7 +233,7 @@ abstract class AbstractModel
      */
     public static final function update($data, array $keys, array $columns)
     {
-        if (!$data instanceof static::class) {
+        if (!$data instanceof static) {
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
         $db = DatabaseManager::connect(static::getDatabase());
@@ -238,12 +255,22 @@ abstract class AbstractModel
      */
     public static final function upsert($data, array $keys, array $columns = [])
     {
-        if (!$data instanceof static::class) {
+        if (!$data instanceof static) {
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
         $db = DatabaseManager::connect(static::getDatabase());
         $query = Query::upsert(static::getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            foreach ($result->getInserts() as $ins) {
+                $ins->{$pk} = $insertedId++;
+            }
+        }
+
         return $result;
     }
 
@@ -258,7 +285,7 @@ abstract class AbstractModel
     public static final function upsertMany(iterable $data, array $keys, array $columns)
     {
         foreach ($data as $k => $v) {
-            if (!$v instanceof static::class) {
+            if (!$v instanceof static) {
                 throw new InvalidArgumentException(
                     sprintf('Invalid item type in $data[%d], must be of type %s.', $k, static::class)
                 );
@@ -267,6 +294,16 @@ abstract class AbstractModel
         $db = DatabaseManager::connect(static::getDatabase());
         $query = Query::upsert(static::getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            foreach ($result->getInserts() as $ins) {
+                $ins->{$pk} = $insertedId++;
+            }
+        }
+
         return $result;
     }
     #endregion
