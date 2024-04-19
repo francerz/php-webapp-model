@@ -5,6 +5,7 @@ namespace Francerz\WebappModelUtils;
 use Francerz\SqlBuilder\Components\Table;
 use Francerz\SqlBuilder\DatabaseManager;
 use Francerz\SqlBuilder\Query;
+use Francerz\SqlBuilder\Results\DeleteResult;
 use Francerz\SqlBuilder\SelectQuery;
 use InvalidArgumentException;
 
@@ -14,7 +15,7 @@ abstract class ModelOperations
      * Returns `true` if a class implements the interface. Or `false` if class
      * do not implement it.
      *
-     * @param string $class
+     * @param string $class A class name string.
      * @param string $interface
      * @return bool
      */
@@ -27,10 +28,10 @@ abstract class ModelOperations
      * Checks if class implements an interface, throws an exception if is not
      * implemented.
      *
-     * @param string $class
+     * @param string $class A class name string.
      * @param srring $interface
      * @return void
-     * 
+     *
      * @throws InvalidArgumentException
      */
     private static function checkClassImplements($class, $interface)
@@ -54,7 +55,7 @@ abstract class ModelOperations
      *  - **@limit**: Restricts number of items returned by SelectQuery.
      *  - **@offset**: Available only with `@limit` parameter, skips rows a the beginning of result set.
      *  - **@page**: Retrieves a chunk of records from result set.
-     *  - **@pageSize**: Sets the size of records chunk.
+     *  - **@pageSize**: Sets the size of records chunk. (default = 500)
      *
      * @return SelectQuery
      *
@@ -154,6 +155,7 @@ abstract class ModelOperations
     /**
      * Performs an insert into model table with given data and column names.
      *
+     * @param string $class A class name string.
      * @param object $data A model class instance with required attribute values.
      * @param string[] $columns A list of column names to be inserted.
      * @return InsertResult
@@ -182,6 +184,7 @@ abstract class ModelOperations
     /**
      * Performs an insert into model table from a collection of data with column names.
      *
+     * @param string $class A class name string.
      * @param iterable $data A collection of model class instances.
      * @param string[] $columns A list of column names to be inserted.
      * @return InsertResult
@@ -217,6 +220,7 @@ abstract class ModelOperations
      * Performs an update operation in model table from given data object
      * where column matches with $keys argument.
      *
+     * @param string $class A class name string.
      * @param object $data A model class instance with data to be updated.
      * @param string[] $keys Names of columns that should match to update.
      * @param string[] $columns Column names to be updated.
@@ -239,6 +243,7 @@ abstract class ModelOperations
      * If columns is empty, the update operation is ignored and only inserts
      * when no matching row is found.
      *
+     * @param string $class A class name string.
      * @param object $data A model class instance with data to insert or update.
      * @param string[] $keys Names of columns that should match to update.
      * @param string[] $columns Column names to be updated or inserted.
@@ -268,6 +273,7 @@ abstract class ModelOperations
     /**
      * Performs an update in all matching rows, otherwise rows will be inserted.
      *
+     * @param string $class A class name string.
      * @param iterable $data A collection of model class instances with data to insert or update.
      * @param string[] $keys Names of columns that should match to update.
      * @param string[] $columns Column names to be updated or inserted.
@@ -298,6 +304,13 @@ abstract class ModelOperations
         return $result;
     }
 
+    /**
+     * Performs a delete action on all rows that matches the $filter.
+     *
+     * @param string $class A class name string.
+     * @param mixed[] $filter
+     * @return DeleteResult
+     */
     final public static function delete($class, array $filter)
     {
         $db = DatabaseManager::connect($class::getDatabase());
