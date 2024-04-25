@@ -36,9 +36,9 @@ abstract class ModelOperations
      */
     private static function checkClassImplements($class, $interface)
     {
-        if (static::classImplements($class, $interface)) {
+        if (!static::classImplements($class, $interface)) {
             throw new InvalidArgumentException(
-                sprintf('The $class argument must implement \'%s\'', $interface)
+                sprintf('The class %s must implement \'%s\'', $class, $interface)
             );
         }
     }
