@@ -17,8 +17,8 @@ class ModelDescriptor
     }
 
     /**
-     * @param string[] $primaryKeyNames
-     * @return void
+     * @param array $primaryKeyNames
+     * @return static
      */
     public function withPrimaryKeyNames(array $primaryKeyNames)
     {
