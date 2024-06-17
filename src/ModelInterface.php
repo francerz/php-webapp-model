@@ -4,35 +4,17 @@ namespace Francerz\WebappModelUtils;
 
 use Francerz\SqlBuilder\SelectQuery;
 
+/**
+ * @deprecated
+ */
 interface ModelInterface
 {
     /**
-     * Returns a database connection parameter object, alias or uri connection string.
+     * Model Descriptor
      *
-     * @return string
+     * @return ModelDescriptor
      */
-    public static function getDatabase(): string;
-
-    /**
-     * Returns an string with database table name.
-     *
-     * @return string
-     */
-    public static function getTableName(): string;
-
-    /**
-     * Returns an sring with a table alias or `null` otherwise.
-     *
-     * @return string|null
-     */
-    public static function getTableAlias(): ?string;
-
-    /**
-     * Returns an array of primary key column names.
-     *
-     * @return string[]
-     */
-    public static function getPrimaryKeyNames(): array;
+    public static function getModelDescriptor(): ModelDescriptor;
 
     /**
      * Builds a SelectQuery object based upon given parameters.

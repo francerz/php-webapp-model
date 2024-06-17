@@ -9,6 +9,9 @@ use Francerz\SqlBuilder\Results\DeleteResult;
 use Francerz\SqlBuilder\SelectQuery;
 use InvalidArgumentException;
 
+/**
+ * @deprecated
+ */
 abstract class ModelOperations
 {
     /**
@@ -68,7 +71,9 @@ abstract class ModelOperations
         // Wraps $params parameter to check select query building consistency.
         $params = new ModelParams($params);
 
-        $tableRef = new Table($class::getTableName(), $class::getTableAlias());
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $tableRef = new Table($modelDescriptor->getTableName(), $modelDescriptor->getTableAlias());
         $query = Query::selectFrom($tableRef);
 
         // Builds select query from given params.
@@ -107,8 +112,10 @@ abstract class ModelOperations
     final public static function getRows($class, array $params = [])
     {
         static::checkClassImplements($class, ModelInterface::class);
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = $class::getQuery($params);
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = $class::getQuery($params); // DANGER: $class might not implement method `getQuery`.
         $result = $db->executeSelect($query);
         return $result->toArray($class);
     }
@@ -145,7 +152,9 @@ abstract class ModelOperations
     public static function getSinglePrimaryKeyName($class): ?string
     {
         static::checkClassImplements($class, ModelInterface::class);
-        $pks = $class::getPrimaryKeyNames();
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $pks = $modelDescriptor->getPrimaryKeyNames();
         if (count($pks) === 1) {
             return reset($pks);
         }
@@ -167,8 +176,10 @@ abstract class ModelOperations
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', $class));
         }
 
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::insertInto($class::getTableName(), $data, $columns);
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
         $result = $db->executeInsert($query);
 
         if (
@@ -200,8 +211,11 @@ abstract class ModelOperations
                 );
             }
         }
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::insertInto($class::getTableName(), $data, $columns);
+
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
         $result = $db->executeInsert($query);
 
         if (
@@ -228,11 +242,16 @@ abstract class ModelOperations
      */
     final public static function update($class, object $data, array $keys, array $columns)
     {
+        static::checkClassImplements($class, ModelInterface::class);
+
         if (!$data instanceof $class) {
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', $class));
         }
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::update($class::getTableName(), $data, $keys, $columns);
+
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::update($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpdate($query);
         return $result;
     }
@@ -251,11 +270,16 @@ abstract class ModelOperations
      */
     final public static function upsert($class, object $data, array $keys, array $columns = [])
     {
+        static::checkClassImplements($class, ModelInterface::class);
+
         if (!$data instanceof $class) {
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', $class));
         }
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::upsert($class::getTableName(), $data, $keys, $columns);
+
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
 
         if (
@@ -288,8 +312,10 @@ abstract class ModelOperations
                 );
             }
         }
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::upsert($class::getTableName(), $data, $keys, $columns);
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
 
         if (
@@ -313,8 +339,10 @@ abstract class ModelOperations
      */
     final public static function delete($class, array $filter)
     {
-        $db = DatabaseManager::connect($class::getDatabase());
-        $query = Query::deleteFrom($class::getTableName(), $filter);
+        /** @var ModelDescriptor */
+        $modelDescriptor = $class::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::deleteFrom($modelDescriptor->getTableName(), $filter);
         $result = $db->executeDelete($query);
         return $result;
     }

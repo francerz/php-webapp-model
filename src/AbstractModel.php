@@ -2,15 +2,37 @@
 
 namespace Francerz\WebappModelUtils;
 
+use Francerz\SqlBuilder\Components\Table;
+use Francerz\SqlBuilder\DatabaseManager;
+use Francerz\SqlBuilder\Query;
 use Francerz\SqlBuilder\Results\DeleteResult;
 use Francerz\SqlBuilder\Results\InsertResult;
 use Francerz\SqlBuilder\Results\UpdateResult;
 use Francerz\SqlBuilder\Results\UpsertResult;
 use Francerz\SqlBuilder\SelectQuery;
+use InvalidArgumentException;
 
-abstract class AbstractModel implements ModelInterface
+abstract class AbstractModel
 {
-    #region Model operations static methods
+    /**
+     * Model Descriptor
+     *
+     * @return ModelDescriptor
+     */
+    abstract public static function getModelDescriptor(): ModelDescriptor;
+
+    /**
+     * Builds a SelectQuery object based upon given parameters.
+     *
+     * This method receives a ModelParams instance to ensure query building consistency.
+     *
+     * This method is used by `getQuery()`, `getRows()`, `getFirst()` and `getLast()` methods.
+     *
+     * @return SelectQuery
+     */
+    abstract public static function buildSelectQuery(SelectQuery $query, ModelParams $params): SelectQuery;
+
+    #region Model operations
     /**
      * Builds a SelectQuery object based upon given parameters.
      *
@@ -19,19 +41,50 @@ abstract class AbstractModel implements ModelInterface
      * @param array $params
      * An associative array with select query building parameters.
      * This function also includes some default building parameters:
-     *  - **@orderBy**: Applies `ORDER BY` clause to select query.
-     *  - **@limit**: Restricts number of items returned by SelectQuery.
-     *  - **@offset**: Available only with `@limit` parameter, skips rows a the beginning of result set.
-     *  - **@page**: Retrieves a chunk of records from result set.
-     *  - **@pageSize**: Sets the size of records chunk.
+     *  - **`@orderBy`**: Applies `ORDER BY` clause to select query.
+     *  - **`@limit`**: Restricts number of items returned by SelectQuery.
+     *  - **`@offset`**: Available only with `@limit` parameter, skips rows a the beginning of result set.
+     *  - **`@page`**: Retrieves a chunk of records from result set.
+     *  - **`@pageSize`**: Sets the size of records chunk.
      *
      * @return SelectQuery
      *
      * @throws UnusedParamsException If any of given parameters weren't properly used in select query building.
      */
-    final public static function getQuery(array $params = []): SelectQuery
+    public static function getQuery(array $params = []): SelectQuery
     {
-        return ModelOperations::getQuery(static::class, $params);
+        // Wraps $params parameter to check select query building consistency.
+        $params = new ModelParams($params);
+
+        $modelDescriptor = static::getModelDescriptor();
+        $tableRef = new Table($modelDescriptor->getTableName(), $modelDescriptor->getTableAlias());
+        $query = Query::selectFrom($tableRef);
+
+        // Builds select query from given params.
+        $query = static::buildSelectQuery($query, $params);
+
+        // Applies @orderBy parameter to SelectQuery.
+        if (isset($params['@orderBy'])) {
+            $query->orderBy($params['@orderBy']);
+        }
+
+        // Applies @limit parameter to SelectQuery.
+        // Optional @offset parameter may be used to skip rows (default = 0).
+        if (isset($params['@limit'])) {
+            $offset = isset($params['@offset']) ? $params['@offset'] : 0;
+            $query->limit($params['@limit'], $offset);
+        }
+
+        // Applies @page parameter to SelectQuery to handle result in chunks.
+        // Optional @pageSize parameter may be used to modify chunk size (default = 500).
+        if (isset($params['@page'])) {
+            $pageSize = isset($params['@pageSize']) ? $params['@pageSize'] : 500;
+            $query->paginate($params['@page'], $pageSize);
+        }
+
+        // Checks if all params were used properly.
+        $params->checkUsed();
+        return $query;
     }
 
     /**
@@ -41,9 +94,13 @@ abstract class AbstractModel implements ModelInterface
      *
      * @return static[]
      */
-    final public static function getRows(array $params = [])
+    public static function getRows(array $params = [])
     {
-        return ModelOperations::getRows(static::class, $params);
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = static::getQuery($params);
+        $result = $db->executeSelect($query);
+        return $result->toArray(static::class);
     }
 
     /**
@@ -52,9 +109,10 @@ abstract class AbstractModel implements ModelInterface
      * @param array $params An associative array with select query building parameters.
      * @return static
      */
-    final public static function getFirst(array $params = [])
+    public static function getFirst(array $params = [])
     {
-        return ModelOperations::getFirst(static::class, $params);
+        $rows = static::getRows($params);
+        return reset($rows) ?: null;
     }
 
     /**
@@ -63,9 +121,22 @@ abstract class AbstractModel implements ModelInterface
      * @param array $params An associative array with select query building parameters.
      * @return static
      */
-    final public static function getLast(array $params = [])
+    public static function getLast(array $params = [])
     {
-        return ModelOperations::getLast(static::class, $params);
+        $rows = static::getRows($params);
+        return end($rows) ?: null;
+    }
+
+    /**
+     * Retrieves the Primary Key name when there's only one. Otherwise returns null.
+     *
+     * @return string|null Primary key name string.
+     */
+    public static function getSinglePrimaryKeyName(): ?string
+    {
+        $modelDescriptor = static::getModelDescriptor();
+        $pks = $modelDescriptor->getPrimaryKeyNames();
+        return count($pks) === 1 ? reset($pks) : null;
     }
 
     /**
@@ -75,9 +146,25 @@ abstract class AbstractModel implements ModelInterface
      * @param string[] $columns A list of column names to be inserted.
      * @return InsertResult
      */
-    final public static function insert($data, array $columns)
+    public static function insert(object $data, array $columns): InsertResult
     {
-        return ModelOperations::insert(static::class, $data, $columns);
+        if (!$data instanceof static) {
+            throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
+        }
+
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
+        $result = $db->executeInsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            $data->{$pk} = $insertedId;
+        }
+
+        return $result;
     }
 
     /**
@@ -87,9 +174,31 @@ abstract class AbstractModel implements ModelInterface
      * @param string[] $columns A list of column names to be inserted.
      * @return InsertResult
      */
-    final public static function insertMany(iterable $data, array $columns)
+    public static function insertMany(iterable $data, array $columns): InsertResult
     {
-        return ModelOperations::insertMany(static::class, $data, $columns);
+        foreach ($data as $k => $v) {
+            if (!$v instanceof static) {
+                throw new InvalidArgumentException(
+                    sprintf('Invalid item type in $data[%d], must be of type %s.', $k, static::class)
+                );
+            }
+        }
+
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
+        $result = $db->executeInsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            foreach ($data as $v) {
+                $v->{$pk} = $insertedId++;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -101,9 +210,17 @@ abstract class AbstractModel implements ModelInterface
      * @param string[] $columns Column names to be updated.
      * @return UpdateResult
      */
-    final public static function update($data, array $keys, array $columns)
+    public static function update(object $data, array $keys, array $columns): UpdateResult
     {
-        return ModelOperations::update(static::class, $data, $keys, $columns);
+        if (!$data instanceof static) {
+            throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
+        }
+
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::update($modelDescriptor->getTableName(), $data, $keys, $columns);
+        $result = $db->executeUpdate($query);
+        return $result;
     }
 
     /**
@@ -117,9 +234,27 @@ abstract class AbstractModel implements ModelInterface
      * @param string[] $columns Column names to be updated or inserted.
      * @return UpsertResult
      */
-    final public static function upsert($data, array $keys, array $columns = [])
+    public static function upsert(object $data, array $keys, array $columns = []): UpsertResult
     {
-        return ModelOperations::upsert(static::class, $data, $keys, $columns);
+        if (!$data instanceof static) {
+            throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
+        }
+
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
+        $result = $db->executeUpsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            foreach ($result->getInserts() as $ins) {
+                $ins->{$pk} = $insertedId++;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -130,9 +265,31 @@ abstract class AbstractModel implements ModelInterface
      * @param string[] $columns Column names to be updated or inserted.
      * @return UpsertResult
      */
-    final public static function upsertMany(iterable $data, array $keys, array $columns)
+    public static function upsertMany(iterable $data, array $keys, array $columns): UpsertResult
     {
-        return ModelOperations::upsertMany(static::class, $data, $keys, $columns);
+        foreach ($data as $k => $v) {
+            if (!$v instanceof static) {
+                throw new InvalidArgumentException(
+                    sprintf('Invalid item type in $data[%d], must be of type %s.', $k, static::class)
+                );
+            }
+        }
+
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
+        $result = $db->executeUpsert($query);
+
+        if (
+            ($pk = static::getSinglePrimaryKeyName()) &&
+            ($insertedId = $result->getInsertedId())
+        ) {
+            foreach ($result->getInserts() as $ins) {
+                $ins->{$pk} = $insertedId++;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -141,9 +298,13 @@ abstract class AbstractModel implements ModelInterface
      * @param array $filter
      * @return DeleteResult
      */
-    final public static function delete(array $filter)
+    public static function delete(array $filter): DeleteResult
     {
-        return ModelOperations::delete(static::class, $filter);
+        $modelDescriptor = static::getModelDescriptor();
+        $db = DatabaseManager::connect($modelDescriptor->getDatabase());
+        $query = Query::deleteFrom($modelDescriptor->getTableName(), $filter);
+        $result = $db->executeDelete($query);
+        return $result;
     }
     #endregion
 }
