@@ -17,7 +17,7 @@ class ModelDescriptor
     }
 
     /**
-     * @param array $primaryKeyNames
+     * @param string[] $primaryKeyNames
      * @return static
      */
     public function withPrimaryKeyNames(array $primaryKeyNames)
@@ -25,6 +25,15 @@ class ModelDescriptor
         $clone = clone $this;
         $clone->primaryKeyNames = $primaryKeyNames;
         return $clone;
+    }
+
+    /**
+     * @param string[] $primaryKeyNames
+     * @return void
+     */
+    public function setPrimaryKeyNames(array $primaryKeyNames)
+    {
+        $this->primaryKeyNames = $primaryKeyNames;
     }
 
     /**
