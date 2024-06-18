@@ -13,6 +13,11 @@
             "Francerz\\WebappModelUtils\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Francerz\\WebappModelUtils\\Dev\\": "dev/"
+        }
+    },
     "require-dev": {
         "phpunit/phpunit": "^9.5",
         "francerz/sql-builder": "^0.5"

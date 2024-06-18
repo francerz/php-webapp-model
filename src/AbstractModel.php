@@ -32,6 +32,20 @@ abstract class AbstractModel
      */
     abstract public static function buildSelectQuery(SelectQuery $query, ModelParams $params): SelectQuery;
 
+    /**
+     * Uses temporal storage for each class, to prevent excesive instantiation.
+     *
+     * @return ModelDescriptor
+     */
+    private static function getModelDescriptorCached(): ModelDescriptor
+    {
+        static $modelDescriptor;
+        if (!isset($modelDescriptor)) {
+            $modelDescriptor = static::getModelDescriptor();
+        }
+        return $modelDescriptor;
+    }
+
     #region Model operations
     /**
      * Builds a SelectQuery object based upon given parameters.
@@ -56,7 +70,7 @@ abstract class AbstractModel
         // Wraps $params parameter to check select query building consistency.
         $params = new ModelParams($params);
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $tableRef = new Table($modelDescriptor->getTableName(), $modelDescriptor->getTableAlias());
         $query = Query::selectFrom($tableRef);
 
@@ -96,7 +110,7 @@ abstract class AbstractModel
      */
     public static function getRows(array $params = [])
     {
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = static::getQuery($params);
         $result = $db->executeSelect($query);
@@ -134,7 +148,7 @@ abstract class AbstractModel
      */
     public static function getSinglePrimaryKeyName(): ?string
     {
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $pks = $modelDescriptor->getPrimaryKeyNames();
         return count($pks) === 1 ? reset($pks) : null;
     }
@@ -152,7 +166,7 @@ abstract class AbstractModel
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
         $result = $db->executeInsert($query);
@@ -184,7 +198,7 @@ abstract class AbstractModel
             }
         }
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::insertInto($modelDescriptor->getTableName(), $data, $columns);
         $result = $db->executeInsert($query);
@@ -216,7 +230,7 @@ abstract class AbstractModel
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::update($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpdate($query);
@@ -240,7 +254,7 @@ abstract class AbstractModel
             throw new InvalidArgumentException(sprintf('Argument $data must be of type %s.', static::class));
         }
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
@@ -275,7 +289,7 @@ abstract class AbstractModel
             }
         }
 
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::upsert($modelDescriptor->getTableName(), $data, $keys, $columns);
         $result = $db->executeUpsert($query);
@@ -300,7 +314,7 @@ abstract class AbstractModel
      */
     public static function delete(array $filter): DeleteResult
     {
-        $modelDescriptor = static::getModelDescriptor();
+        $modelDescriptor = static::getModelDescriptorCached();
         $db = DatabaseManager::connect($modelDescriptor->getDatabase());
         $query = Query::deleteFrom($modelDescriptor->getTableName(), $filter);
         $result = $db->executeDelete($query);
