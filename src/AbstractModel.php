@@ -37,7 +37,7 @@ abstract class AbstractModel
      *
      * @return ModelDescriptor
      */
-    private static function getModelDescriptorCached(): ModelDescriptor
+    protected static function getModelDescriptorCached(): ModelDescriptor
     {
         static $modelDescriptor;
         if (!isset($modelDescriptor)) {
