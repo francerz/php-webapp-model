@@ -22,6 +22,7 @@ class ModelParams implements ArrayAccess, Countable, Iterator
      * @param mixed $value The value to set.
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
         $this->params[$offset] = $value;
@@ -31,6 +32,7 @@ class ModelParams implements ArrayAccess, Countable, Iterator
      * @param mixed $offset An offset to check for
      * @return boolean
      */
+    #[\ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         $this->offsetExists[$offset] = true;
@@ -42,6 +44,7 @@ class ModelParams implements ArrayAccess, Countable, Iterator
      * @return mixed Can return all value types.
      * @throws ParamUncheckedException when
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         if (!isset($this->offsetExists[$offset])) {
@@ -60,36 +63,43 @@ class ModelParams implements ArrayAccess, Countable, Iterator
      * @param mixed $offset — The offset to unset.
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         unset($params[$offset]);
     }
 
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return count($this->params);
     }
 
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return key($this->params);
     }
 
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return key($this->params) !== null;
     }
 
+    #[\ReturnTypeWillChange]
     public function current()
     {
         return current($this->params);
     }
 
+    #[\ReturnTypeWillChange]
     public function next()
     {
         next($this->params);
     }
 
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         reset($this->params);
